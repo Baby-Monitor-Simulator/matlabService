@@ -1,4 +1,4 @@
-function FMPmodel
+function result = FMPmodel(vMother, vUterus, vFoetus, vUmbilical, vBrain, vCAVmodel, vScen, vHES, vPersen, vDuty, vNCycleMax, vLamb)
     %FMPmodel
     %clear all;
     %close all;
@@ -6,18 +6,31 @@ function FMPmodel
     %ophalen als data=load('*.mat');
     
     % === FMP body parts options
-    mother    =1;
-    uterus    =1;
-    foetus    =1;
-    umbilical =2; if umbilical==1; disp('umbilical=1'); elseif umbilical==2; disp('PAS OP: umbilical=2'); end
-    brain     =1;
-    CAVmodel  =2; %1=TVE, 2=1fiber 3=testcombi 5=1fibernew
-    scen      =2; if scen==0; disp('normaal CTG'); elseif scen==1; disp('vroege decels'); elseif scen==2; disp('late decels'); elseif scen==3||scen==3.1; disp('variabele decels'); umbilical=2; end
-    HES       =0; %1 is fluid bolus (500 mL HES), 0 niet
-    persen    =0; %1 is meepersen, 0 niet
-    duty      =0; %wel of geen duty cycles
-    ncyclemax =300;                  % [-] - maximum number of (maternal) cycles
-    lamb      =0; if lamb==0; disp('Het is een foetus'); else disp('PAS OP: lammetje'); end
+    %mother    =1;
+    %uterus    =1;
+    %foetus    =1;
+    %umbilical =2; if umbilical==1; disp('umbilical=1'); elseif umbilical==2; disp('PAS OP: umbilical=2'); end
+    %brain     =1;
+    %CAVmodel  =2; %1=TVE, 2=1fiber 3=testcombi 5=1fibernew
+    %scen      =2; if scen==0; disp('normaal CTG'); elseif scen==1; disp('vroege decels'); elseif scen==2; disp('late decels'); elseif scen==3||scen==3.1; disp('variabele decels'); umbilical=2; end
+    %HES       =0; %1 is fluid bolus (500 mL HES), 0 niet
+    %persen    =0; %1 is meepersen, 0 niet
+    %duty      =0; %wel of geen duty cycles
+    %ncyclemax =300;                  % [-] - maximum number of (maternal) cycles
+    %lamb      =0; if lamb==0; disp('Het is een foetus'); else disp('PAS OP: lammetje'); end
+
+    mother    =vMother;
+    uterus    =vUterus;
+    foetus    =vFoetus;
+    umbilical =vUmbilical; if umbilical==1; disp('umbilical=1'); elseif umbilical==2; disp('PAS OP: umbilical=2'); end
+    brain     =vBrain;
+    CAVmodel  =vCAVmodel; %1=TVE, 2=1fiber 3=testcombi 5=1fibernew
+    scen      =vScen; if scen==0; disp('normaal CTG'); elseif scen==1; disp('vroege decels'); elseif scen==2; disp('late decels'); elseif scen==3||scen==3.1; disp('variabele decels'); umbilical=2; end
+    HES       =vHES; %1 is fluid bolus (500 mL HES), 0 niet
+    persen    =vPersen; %1 is meepersen, 0 niet
+    duty      =vDuty; %wel of geen duty cycles
+    ncyclemax =vNCycleMax;                  % [-] - maximum number of (maternal) cycles
+    lamb      =vLamb; if lamb==0; disp('Het is een foetus'); else disp('PAS OP: lammetje'); end
     
     
     % === initialise simulation
