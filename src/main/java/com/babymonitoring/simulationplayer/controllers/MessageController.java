@@ -30,9 +30,33 @@ public class MessageController {
     public void lobby(Message message) throws Exception {
         Thread newThread = new Thread(() -> {
             try {
-                //this.simulation = new Simulation(this);
-                //simulation.startSimulation(10, 1000, 5, 0.5, 0, 0.01, 10, message.getUserId());
-                new Simulation(this).startSimulation(10, 1000, 5, 0.5, 0, 0.01, 10, message.getUserId());
+                //----- For sine script -----
+//                int t               = 10;
+//                int steps           = 1000;
+//                double a            = 5;
+//                double f            = 0.5;
+//                double ts           = 0;
+//                double tsp          = 0.01;
+//                double te           = 10;
+//                new Simulation(this).startSimulation(t, steps, a, f, ts, tsp, te, message.getUserId());
+                //---------------------------
+
+                //----- For production script -----
+                boolean mother      = true;
+                boolean uterus      = true;
+                boolean foetus      = true;
+                int umbilical       = 2;
+                boolean brain       = true;
+                int CAVmodel        = 2;
+                int scen            = 2;
+                boolean HES         = false;
+                boolean persen      = false;
+                boolean duty        = false;
+                int ncyclemax       = 300;
+                boolean lamb        = false;
+                new Simulation(this).startProductionSimulation(mother, uterus, foetus, umbilical, brain, CAVmodel, scen, HES, persen, duty, ncyclemax, lamb, message.getUserId());
+                //---------------------------------
+
             } catch (ExecutionException e) {
                 throw new RuntimeException(e);
             } catch (InterruptedException e) {

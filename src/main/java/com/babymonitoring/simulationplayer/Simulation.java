@@ -56,7 +56,7 @@ public class Simulation {
             }
         });
     }
-    public static void Chart() {
+    public void Chart() {
         try {
 
             // Voer het script uit met invoer n = 4
@@ -97,7 +97,7 @@ public class Simulation {
                 }
             });
 
-            //startSimulation(10, 1000,5,0.5,0,0.01,10);
+            //startSimulation(10, 1000,5,0.5,0,0.01,10, UUID.randomUUID());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -116,6 +116,11 @@ public class Simulation {
 
     @Async
     public void startSimulation(int t, int steps, double a, double f, double ts, double tsp, double te, UUID userId) throws ExecutionException, InterruptedException {
+        //----- For debug -----
+        Chart();
+        //---------------------
+
+
         simResults = getMatlabResultAsync(a,f,ts,tsp,te).get();
         timer = new Timer(t, new ActionListener() {
             @Override
@@ -124,9 +129,12 @@ public class Simulation {
                     int xCoord = timeIndex + prevTimeIndex;
                     double yCoord = simResults[timeIndex];
 
-                    //series.add(xCoord, yCoord); // Series.add( X-as, Y-as )
+                    //----- For debug -----
+                    series.add(xCoord, yCoord); // Series.add( X-as, Y-as )
+                    //---------------------
+
                     //WEBSOCKET
-                    controller.SendCoords(new CoordsMessage(userId, xCoord, yCoord));
+                    //controller.SendCoords(new CoordsMessage(userId, xCoord, yCoord));
 
                     timeIndex++;
 
@@ -149,5 +157,71 @@ public class Simulation {
             }
         });
         timer.start();
+    }
+
+    public static CompletableFuture<double[]> getProductionMatlabResultAsync(boolean vMother, boolean vUterus, boolean vFoetus, int vUmbilical, boolean vBrain, int vCAVmodel, int vScen, boolean vHES, boolean vPersen, boolean vDuty, int vNCycleMax, boolean vLamb) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                // Start de MATLAB-engine
+                MatlabEngine eng = MatlabEngine.startMatlab();
+
+                String projectDir = Paths.get("").toAbsolutePath().toString();
+                String relativePath = projectDir + "\\src\\main\\resources\\scripts\\matlab\\production";
+                eng.eval("addpath('" + relativePath.replace("\\", "\\\\") + "')");
+
+                double[] result = eng.feval("FMPmodel", vMother ? 1 : 0, vUterus ? 1 : 0, vFoetus ? 1 : 0, vUmbilical, vBrain ? 1 : 0, vCAVmodel, vScen, vHES ? 1 : 0, vPersen ? 1 : 0, vDuty ? 1 : 0, vNCycleMax, vLamb ? 1 : 0);
+                eng.close();
+                return result;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
+    }
+
+    @Async
+    public void startProductionSimulation(boolean vMother, boolean vUterus, boolean vFoetus, int vUmbilical, boolean vBrain, int vCAVmodel, int vScen, boolean vHES, boolean vPersen, boolean vDuty, int vNCycleMax, boolean vLamb, UUID userId) throws ExecutionException, InterruptedException {
+        //----- For debug -----
+        //Chart();
+        //---------------------
+
+
+        simResults = getProductionMatlabResultAsync(vMother, vUterus, vFoetus, vUmbilical, vBrain, vCAVmodel, vScen, vHES, vPersen, vDuty, vNCycleMax, vLamb).get();
+        //timer = new Timer(t, new ActionListener() {
+            //@Override
+            //public void actionPerformed(ActionEvent e) {
+                try {
+                    int xCoord = timeIndex + prevTimeIndex;
+                    double yCoord = simResults[timeIndex];
+
+                    //----- For debug -----
+                    series.add(xCoord, yCoord); // Series.add( X-as, Y-as )
+                    //---------------------
+
+                    //----- For WEBSOCKET -----
+                    //controller.SendCoords(new CoordsMessage(userId, xCoord, yCoord));
+                    //-------------------------
+
+                    /*timeIndex++;
+
+                    if (timeIndex == 2){
+                        simResults = getProductionMatlabResultAsync(vMother, vUterus, vFoetus, vUmbilical, vBrain, vCAVmodel, vScen, vHES, vPersen, vDuty, vNCycleMax, vLamb).get();
+                    }
+
+                    if ((endSimulation || timeIndex >= steps)) {
+                        if (simPreResults.isDone() && (simResults[timeIndex-2] < simResults[timeIndex-1]) && simIsinRange(simResults[timeIndex]) ) {
+                            endSimulation = false;
+                            simcount++;
+                            prevTimeIndex = timeIndex + prevTimeIndex;
+                            timeIndex = 0;
+                            simResults = simPreResults.get();
+                        }
+                    }*/
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            //}
+        //});
+        //timer.start();
     }
 }
