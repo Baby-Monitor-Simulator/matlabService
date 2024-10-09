@@ -315,4 +315,7 @@ function result = FMPmodel(vMother, vUterus, vFoetus, vUmbilical, vBrain, vCAVmo
         fq = fqsav(:,jmin:j);
         post_f % >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> user m-file
     end
+
+    %result = {tom/60, fackPaHg*fpcon(1:nj), 60e6*a(5,1:ico), PfO2(1:ico), mfpart(1:ico), 60./(ftcycle/1000)};
+    result = {{tsav(1:nj)/60, fackPaHg*fpcon(1:nj)}, {tom/60, 60e6*a(5,1:ico)}, {tom/60, PfO2(1:ico)}, {tom/60, mfpart(1:ico)}, {tm/60, 60./(ftcycle/1000)}}
 end
