@@ -9,6 +9,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -22,9 +23,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 
 public class Simulation {
-    private static int timeIndex = 0;
+    private static double timeIndex = 0;
     private static int simcount = 1;
-    private static int prevTimeIndex = 0;
+    private static double prevTimeIndex = 0;
     private static MatlabEngine eng;
     private static Timer timer;
     private static XYSeries series;
@@ -126,8 +127,8 @@ public class Simulation {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    int xCoord = timeIndex + prevTimeIndex;
-                    double yCoord = simResults[timeIndex];
+                    double xCoord = timeIndex + prevTimeIndex;
+                    double yCoord = simResults[(int) timeIndex];
 
                     //----- For debug -----
                     series.add(xCoord, yCoord); // Series.add( X-as, Y-as )
@@ -143,7 +144,7 @@ public class Simulation {
                     }
 
                     if ((endSimulation || timeIndex >= steps)) {
-                        if (simPreResults.isDone() && (simResults[timeIndex-2] < simResults[timeIndex-1]) && simIsinRange(simResults[timeIndex]) ) {
+                        if (simPreResults.isDone() && (simResults[(int) (timeIndex-2)] < simResults[(int) (timeIndex-1)]) && simIsinRange(simResults[(int) timeIndex]) ) {
                             endSimulation = false;
                             simcount++;
                             prevTimeIndex = timeIndex + prevTimeIndex;
@@ -159,7 +160,7 @@ public class Simulation {
         timer.start();
     }
 
-    public static CompletableFuture<double[]> getProductionMatlabResultAsync(boolean vMother, boolean vUterus, boolean vFoetus, int vUmbilical, boolean vBrain, int vCAVmodel, int vScen, boolean vHES, boolean vPersen, boolean vDuty, int vNCycleMax, boolean vLamb) {
+    public static CompletableFuture<Object[]> getProductionMatlabResultAsync(boolean vMother, boolean vUterus, boolean vFoetus, int vUmbilical, boolean vBrain, int vCAVmodel, int vScen, boolean vHES, boolean vPersen, boolean vDuty, int vNCycleMax, boolean vLamb) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 // Start de MATLAB-engine
@@ -169,7 +170,7 @@ public class Simulation {
                 String relativePath = projectDir + "\\src\\main\\resources\\scripts\\matlab\\production";
                 eng.eval("addpath('" + relativePath.replace("\\", "\\\\") + "')");
 
-                double[] result = eng.feval("FMPmodel", vMother ? 1 : 0, vUterus ? 1 : 0, vFoetus ? 1 : 0, vUmbilical, vBrain ? 1 : 0, vCAVmodel, vScen, vHES ? 1 : 0, vPersen ? 1 : 0, vDuty ? 1 : 0, vNCycleMax, vLamb ? 1 : 0);
+                Object[] result = eng.feval("FMPmodel", vMother ? 1 : 0, vUterus ? 1 : 0, vFoetus ? 1 : 0, vUmbilical, vBrain ? 1 : 0, vCAVmodel, vScen, vHES ? 1 : 0, vPersen ? 1 : 0, vDuty ? 1 : 0, vNCycleMax, vLamb ? 1 : 0);
                 eng.close();
                 return result;
             } catch (Exception e) {
@@ -186,16 +187,52 @@ public class Simulation {
         //---------------------
 
 
-        simResults = getProductionMatlabResultAsync(vMother, vUterus, vFoetus, vUmbilical, vBrain, vCAVmodel, vScen, vHES, vPersen, vDuty, vNCycleMax, vLamb).get();
-        //timer = new Timer(t, new ActionListener() {
-            //@Override
-            //public void actionPerformed(ActionEvent e) {
-                try {
-                    int xCoord = timeIndex + prevTimeIndex;
-                    double yCoord = simResults[timeIndex];
+        Object[] tempSimResults = getProductionMatlabResultAsync(vMother, vUterus, vFoetus, vUmbilical, vBrain, vCAVmodel, vScen, vHES, vPersen, vDuty, vNCycleMax, vLamb).get();
+        //timer = new Timer(180, new ActionListener() {
+        //    @Override
+        //    public void actionPerformed(ActionEvent e) {
+        //        try {
+                    //double xCoord = timeIndex + prevTimeIndex;
+                    //double yCoord = simResults[(int) timeIndex];
+
+                    //System.out.println("COORDS: " + xCoord + ", " + yCoord);
+
+
 
                     //----- For debug -----
-                    series.add(xCoord, yCoord); // Series.add( X-as, Y-as )
+                    //System.out.println("COORDS: " + xCoord + ", " + yCoord);
+                    //System.out.println(Arrays.toString(simResults));
+                    Object[] pUt = (Object[]) tempSimResults[0];
+                    double[] pUtT = (double[]) pUt[0];
+                    double[] pUtV = (double[]) pUt[1];
+
+                    Object[] qUt = (Object[]) tempSimResults[1];
+                    double[] qUtT = (double[]) qUt[0];
+                    double[] qUtV = (double[]) qUt[1];
+
+                    Object[] pAo = (Object[]) tempSimResults[2];
+                    double[] pAoT = (double[]) pAo[0];
+                    double[] pAoV = (double[]) pAo[1];
+
+                    Object[] MAP = (Object[]) tempSimResults[3];
+                    double[] MAPT = (double[]) MAP[0];
+                    double[] MAPV = (double[]) MAP[1];
+
+                    Object[] FHR = (Object[]) tempSimResults[4];
+                    double[] FHRT = (double[]) FHR[0];
+                    double[] FHRV = (double[]) FHR[1];
+
+                    System.out.println("pUtT: " + pUtT.length + " pUtV: " + pUtV.length);
+                    System.out.println("qUtT: " + qUtT.length + " qUtV: " + qUtV.length);
+                    System.out.println("pAoT: " + pAoT.length + " pAoV: " + pAoV.length);
+                    System.out.println("MAPT: " + MAPT.length + " MAPV: " + MAPV.length);
+                    System.out.println("FHRT: " + FHRT.length + " FHRV: " + FHRV.length);
+
+
+                    //series.add(xCoord, yCoord); // Series.add( X-as, Y-as )
+        //            timeIndex += 0.1;
+        //            prevTimeIndex = timeIndex + prevTimeIndex;
+        //            timeIndex = 0;
                     //---------------------
 
                     //----- For WEBSOCKET -----
@@ -217,10 +254,10 @@ public class Simulation {
                             simResults = simPreResults.get();
                         }
                     }*/
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            //}
+        //        } catch (Exception ex) {
+        //            ex.printStackTrace();
+        //        }
+        //    }
         //});
         //timer.start();
     }
