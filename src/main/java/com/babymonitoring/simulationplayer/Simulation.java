@@ -1,7 +1,9 @@
 package com.babymonitoring.simulationplayer;
 
 import com.babymonitoring.simulationplayer.controllers.MessageController;
-import com.babymonitoring.simulationplayer.models.CoordsMessage;
+import com.babymonitoring.simulationplayer.models.messages.CoordsMessage;
+import com.babymonitoring.simulationplayer.models.results.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.mathworks.engine.MatlabEngine;
 
 import javax.swing.*;
@@ -9,18 +11,21 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.List;
+import java.util.ArrayList;
+
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 
 public class Simulation {
     private static double timeIndex = 0;
@@ -35,9 +40,10 @@ public class Simulation {
     private MessageController controller;
 
     //@Autowired
-    public Simulation (MessageController messageController) {
+    public Simulation(MessageController messageController) {
         this.controller = messageController;
     }
+
     public static CompletableFuture<double[]> getMatlabResultAsync(double a, double f, double ts, double tsp, double te) {
         return CompletableFuture.supplyAsync(() -> {
             try {
@@ -57,6 +63,7 @@ public class Simulation {
             }
         });
     }
+
     public void Chart() {
         try {
 
@@ -104,14 +111,15 @@ public class Simulation {
             e.printStackTrace();
         }
     }
+
     @Async
     public static void stopSimulation() {
         timer.stop();
     }
 
-    public static boolean simIsinRange(double y){
-        double top =0;
-        double bottom =-1;
+    public static boolean simIsinRange(double y) {
+        double top = 0;
+        double bottom = -1;
         return y > bottom && y < top;
     }
 
@@ -122,7 +130,7 @@ public class Simulation {
         //---------------------
 
 
-        simResults = getMatlabResultAsync(a,f,ts,tsp,te).get();
+        simResults = getMatlabResultAsync(a, f, ts, tsp, te).get();
         timer = new Timer(t, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -139,12 +147,12 @@ public class Simulation {
 
                     timeIndex++;
 
-                    if (timeIndex == 2){
-                        simPreResults = getMatlabResultAsync(a+simcount, f, ts, tsp, te);
+                    if (timeIndex == 2) {
+                        simPreResults = getMatlabResultAsync(a + simcount, f, ts, tsp, te);
                     }
 
                     if ((endSimulation || timeIndex >= steps)) {
-                        if (simPreResults.isDone() && (simResults[(int) (timeIndex-2)] < simResults[(int) (timeIndex-1)]) && simIsinRange(simResults[(int) timeIndex]) ) {
+                        if (simPreResults.isDone() && (simResults[(int) (timeIndex - 2)] < simResults[(int) (timeIndex - 1)]) && simIsinRange(simResults[(int) timeIndex])) {
                             endSimulation = false;
                             simcount++;
                             prevTimeIndex = timeIndex + prevTimeIndex;
@@ -192,52 +200,72 @@ public class Simulation {
         //    @Override
         //    public void actionPerformed(ActionEvent e) {
         //        try {
-                    //double xCoord = timeIndex + prevTimeIndex;
-                    //double yCoord = simResults[(int) timeIndex];
+        //double xCoord = timeIndex + prevTimeIndex;
+        //double yCoord = simResults[(int) timeIndex];
 
-                    //System.out.println("COORDS: " + xCoord + ", " + yCoord);
-
-
-
-                    //----- For debug -----
-                    //System.out.println("COORDS: " + xCoord + ", " + yCoord);
-                    //System.out.println(Arrays.toString(simResults));
-                    Object[] pUt = (Object[]) tempSimResults[0];
-                    double[] pUtT = (double[]) pUt[0];
-                    double[] pUtV = (double[]) pUt[1];
-
-                    Object[] qUt = (Object[]) tempSimResults[1];
-                    double[] qUtT = (double[]) qUt[0];
-                    double[] qUtV = (double[]) qUt[1];
-
-                    Object[] pAo = (Object[]) tempSimResults[2];
-                    double[] pAoT = (double[]) pAo[0];
-                    double[] pAoV = (double[]) pAo[1];
-
-                    Object[] MAP = (Object[]) tempSimResults[3];
-                    double[] MAPT = (double[]) MAP[0];
-                    double[] MAPV = (double[]) MAP[1];
-
-                    Object[] FHR = (Object[]) tempSimResults[4];
-                    double[] FHRT = (double[]) FHR[0];
-                    double[] FHRV = (double[]) FHR[1];
-
-                    System.out.println("pUtT: " + pUtT.length + " pUtV: " + pUtV.length);
-                    System.out.println("qUtT: " + qUtT.length + " qUtV: " + qUtV.length);
-                    System.out.println("pAoT: " + pAoT.length + " pAoV: " + pAoV.length);
-                    System.out.println("MAPT: " + MAPT.length + " MAPV: " + MAPV.length);
-                    System.out.println("FHRT: " + FHRT.length + " FHRV: " + FHRV.length);
+        //System.out.println("COORDS: " + xCoord + ", " + yCoord);
 
 
-                    //series.add(xCoord, yCoord); // Series.add( X-as, Y-as )
+        //----- For debug -----
+        //System.out.println("COORDS: " + xCoord + ", " + yCoord);
+        //System.out.println(Arrays.toString(simResults));
+        Object[] pUt = (Object[]) tempSimResults[0];
+        double[] pUtT = (double[]) pUt[0];
+        double[] pUtV = (double[]) pUt[1];
+        UPResult[] upResults = new UPResult[pUtT.length];
+        for (int i = 0; i < pUtT.length; i++) {
+            UPResult upResult = new UPResult(pUtT[i], pUtV[i]);
+            upResults[i] = upResult;
+        }
+
+
+        Object[] qUt = (Object[]) tempSimResults[1];
+        double[] qUtT = (double[]) qUt[0];
+        double[] qUtV = (double[]) qUt[1];
+        //FHRResult fhrResult = new FHRResult(qUtT, qUtV);
+
+        Object[] pAo = (Object[]) tempSimResults[2];
+        double[] pAoT = (double[]) pAo[0];
+        double[] pAoV = (double[]) pAo[1];
+        O2PResult[] o2PResults = new O2PResult[pAoT.length];
+        for (int i = 0; i < pAoT.length; i++) {
+            O2PResult o2PResult = new O2PResult(pAoT[i], pAoV[i]);
+            o2PResults[i] = o2PResult;
+        }
+
+        Object[] MAP = (Object[]) tempSimResults[3];
+        double[] MAPT = (double[]) MAP[0];
+        double[] MAPV = (double[]) MAP[1];
+        MAPResult[] mapResults = new MAPResult[MAPT.length];
+        for (int i = 0; i < MAPT.length; i++) {
+            MAPResult mapResult = new MAPResult(MAPT[i], MAPV[i]);
+            mapResults[i] = mapResult;
+        }
+
+        Object[] FHR = (Object[]) tempSimResults[4];
+        double[] FHRT = (double[]) FHR[0];
+        double[] FHRV = (double[]) FHR[1];
+        FHRResult[] fhrResults = new FHRResult[FHRT.length];
+        for (int i = 0; i < FHRT.length; i++) {
+            FHRResult fhrResult = new FHRResult(FHRT[i], FHRV[i]);
+            fhrResults[i] = fhrResult;
+        }
+
+        FMPResult fmpResult = new FMPResult(fhrResults, mapResults, o2PResults, upResults);
+
+        //SplitResults(userId, fmpResult);
+        CorrectResults(userId, fmpResult);
+
+
+        //series.add(xCoord, yCoord); // Series.add( X-as, Y-as )
         //            timeIndex += 0.1;
         //            prevTimeIndex = timeIndex + prevTimeIndex;
         //            timeIndex = 0;
-                    //---------------------
+        //---------------------
 
-                    //----- For WEBSOCKET -----
-                    //controller.SendCoords(new CoordsMessage(userId, xCoord, yCoord));
-                    //-------------------------
+        //----- For WEBSOCKET -----
+        //controller.SendCoords(new CoordsMessage(userId, fmpResult));
+        //-------------------------
 
                     /*timeIndex++;
 
@@ -260,5 +288,95 @@ public class Simulation {
         //    }
         //});
         //timer.start();
+    }
+
+    private void CorrectResults (UUID userId, FMPResult fmpResult) {
+        double timeSpanDif = 0.1;
+        double uPressureDif = 0.1;
+
+
+        double timeSpan = 0;
+        double uPressure = 0;
+        List<UPResult> newList = new ArrayList<>();
+
+        for (int i = 0; i < fmpResult.upResult.length; i++) {
+            UPResult result = fmpResult.upResult[i];
+            if (i != 0 && i < (fmpResult.upResult.length - 1)) {
+                if ((timeSpan + timeSpanDif) < result.timeSpan) {
+                    newList.add(result);
+                    timeSpan = result.timeSpan;
+                    uPressure = result.uPressure;
+                }
+                else if ((uPressure + uPressureDif) < result.uPressure) {
+                    newList.add(result);
+                    timeSpan = result.timeSpan;
+                    uPressure = result.uPressure;
+                }
+            }
+            else if (i != 0) {
+                newList.add(result);
+                timeSpan = result.timeSpan;
+                uPressure = result.uPressure;
+            }
+            else {
+                timeSpan = result.timeSpan;
+                uPressure = result.uPressure;
+
+                newList.add(fmpResult.upResult[i]);
+            }
+        }
+
+        fmpResult.upResult = newList.toArray(new UPResult[0]);
+
+
+        //double timeIndex = 0.5;
+        //int UPIndex = getTimedIndex(timeIndex, fmpResult.upResult);
+        //int O2PIndex = getTimedIndex(timeIndex, fmpResult.o2PResult);
+        //int MAPIndex = getTimedIndex(timeIndex, fmpResult.mapResult);
+        //int FHRIndex = getTimedIndex(timeIndex, fmpResult.fhrResult);
+
+
+
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            String json = mapper.writeValueAsString(fmpResult);
+            System.out.println(json);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+
+        controller.SendCoords(new CoordsMessage(userId, fmpResult));
+    }
+
+//    private void SplitResults (UUID userId, FMPResult fmpResult) {
+//        double timeIndex = 0.5;
+//
+//        //int UPIndex = getTimedIndex(timeIndex, fmpResult.upResult);
+//        //int O2PIndex = getTimedIndex(timeIndex, fmpResult.o2PResult);
+//        //int MAPIndex = getTimedIndex(timeIndex, fmpResult.mapResult);
+//        //int FHRIndex = getTimedIndex(timeIndex, fmpResult.fhrResult);
+//
+//
+//
+//        ObjectMapper mapper = new ObjectMapper();
+//        try {
+//            String json = mapper.writeValueAsString(fmpResult);
+//            System.out.println(json);
+//        } catch (JsonProcessingException e) {
+//            e.printStackTrace();
+//        }
+//
+//        controller.SendCoords(new CoordsMessage(userId, fmpResult));
+//    }
+
+    private int getTimedIndex(double timeIndex, Result[] array) {
+        int index = -1;
+
+        for (int i = 0; i < array.length; i++) {
+            if (array[i].timeSpan > timeIndex) {
+                return i; // Return the first index where value is greater than x
+            }
+        }
+        return index;
     }
 }

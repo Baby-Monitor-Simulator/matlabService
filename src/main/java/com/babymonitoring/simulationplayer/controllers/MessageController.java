@@ -1,19 +1,18 @@
 package com.babymonitoring.simulationplayer.controllers;
 
 import com.babymonitoring.simulationplayer.Simulation;
-import com.babymonitoring.simulationplayer.models.CoordsMessage;
-import com.babymonitoring.simulationplayer.models.Message;
-import com.babymonitoring.simulationplayer.models.TextMessage;
+import com.babymonitoring.simulationplayer.models.messages.CoordsMessage;
+import com.babymonitoring.simulationplayer.models.messages.Message;
+import com.babymonitoring.simulationplayer.models.messages.TextMessage;
+import com.babymonitoring.simulationplayer.models.results.FMPResult;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.util.HtmlUtils;
 
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 @Controller
@@ -66,6 +65,19 @@ public class MessageController {
         newThread.start();
         SendText(new TextMessage(message.getUserId(),"Hello, " + HtmlUtils.htmlEscape(message.getUserId().toString()) + "!"));
     }
+
+//    @MessageMapping("/simulation/testCoords")
+//    public void testingCoords(Message message) throws Exception {
+//        FMPResult result = null;
+//        ObjectMapper mapper = new ObjectMapper();
+//        try {
+//            result = mapper.readValue(ExportedMatlab.data, new FMPResult());
+//            System.out.println(result);
+//        } catch (JsonProcessingException e) {
+//            e.printStackTrace();
+//        }
+//        SendCoords(new CoordsMessage(message.getUserId(), result));
+//    }
 
 
     public void SendText(TextMessage message) {
