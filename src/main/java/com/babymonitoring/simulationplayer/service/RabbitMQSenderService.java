@@ -20,7 +20,13 @@ public class RabbitMQSenderService {
     }
 
     public void sendSimulationUpdate(SimulationUpdate update) {
-        System.out.println("Sending simulation update: " + update);
-        rabbitTemplate.convertAndSend(RabbitMQConfig.LOBBY_QUEUE, update);
+        String routingKey = "matlab.simulationUpdated"; // Define the routing key for this event
+        System.out.println("Sending simulation update: " + update.getStatus() + " with routing key: " + routingKey);
+
+        // Send the message to the topic exchange with the routing key
+        rabbitTemplate.convertAndSend(RabbitMQConfig.TOPIC_EXCHANGE_NAME, routingKey, update);
     }
+
+
+
 }
