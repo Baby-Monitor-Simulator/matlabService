@@ -1,0 +1,14 @@
+services:
+  matlab:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./src:/result/src           # Mount the local src directory
+      - ./target:/result/target       # Mount the local target directory
+      - ./mvnw:/result/mvnw           # Mount the mvnw script
+      - ./pom.xml:/result/pom.xml     # Mount the pom.xml if needed
+    ports:
+      - "8087:8087"                     # Map port 8091 to the host
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
