@@ -1,7 +1,5 @@
 package com.babymonitoring.simulationplayer;
 
-import com.babymonitoring.simulationplayer.controllers.MessageController;
-import com.babymonitoring.simulationplayer.models.CoordsMessage;
 import com.mathworks.engine.MatlabEngine;
 
 import javax.swing.*;
@@ -9,7 +7,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.nio.file.Paths;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import org.jfree.chart.ChartFactory;
@@ -18,7 +15,6 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 
 public class Simulation {
@@ -31,12 +27,9 @@ public class Simulation {
     private static CompletableFuture<double[]> simPreResults;
     private static double[] simResults;
     private static boolean endSimulation = false;
-    private MessageController controller;
 
     //@Autowired
-    public Simulation (MessageController messageController) {
-        this.controller = messageController;
-    }
+    public Simulation () {   }
     public static CompletableFuture<double[]> getMatlabResultAsync(double a, double f, double ts, double tsp, double te) {
         return CompletableFuture.supplyAsync(() -> {
             try {
@@ -56,15 +49,21 @@ public class Simulation {
             }
         });
     }
-    public static void Chart() {
+    @Async
+    public void Chart() {
         try {
+            if (GraphicsEnvironment.isHeadless()) {
+                System.out.println("Headless environment detected. Cannot display GUI.");
+                return;
+            }
 
-            // Voer het script uit met invoer n = 4
-            /*double a = 2;
-            double f = 2;
+            int t = 10;
+            int steps = 1000;
+            double a = 5;
+            double f = 0.5;
             double ts = 0;
             double tsp = 0.01;
-            double te = 10;*/
+            double te = 10;
 
             series = new XYSeries("Sinusfunctie");
             XYSeriesCollection dataset = new XYSeriesCollection(series);
@@ -97,14 +96,14 @@ public class Simulation {
                 }
             });
 
-            //startSimulation(10, 1000,5,0.5,0,0.01,10);
+            startSimulation(t, steps,a,f,ts,tsp,te);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
     @Async
-    public static void stopSimulation() {
+    public void stopSimulation() {
         timer.stop();
     }
 
@@ -115,7 +114,7 @@ public class Simulation {
     }
 
     @Async
-    public void startSimulation(int t, int steps, double a, double f, double ts, double tsp, double te, UUID userId) throws ExecutionException, InterruptedException {
+    public void startSimulation(int t, int steps, double a, double f, double ts, double tsp, double te) throws ExecutionException, InterruptedException {
         simResults = getMatlabResultAsync(a,f,ts,tsp,te).get();
         timer = new Timer(t, new ActionListener() {
             @Override
@@ -124,10 +123,7 @@ public class Simulation {
                     int xCoord = timeIndex + prevTimeIndex;
                     double yCoord = simResults[timeIndex];
 
-                    //series.add(xCoord, yCoord); // Series.add( X-as, Y-as )
-                    //WEBSOCKET
-                    controller.SendCoords(new CoordsMessage(userId, xCoord, yCoord));
-
+                    series.add(xCoord, yCoord);
                     timeIndex++;
 
                     if (timeIndex == 2){
