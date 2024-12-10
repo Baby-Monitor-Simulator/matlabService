@@ -12,7 +12,7 @@ public class SimulationplayerApplication {
 
 		Thread newThread = new Thread(() -> {
             Simulation sim = new Simulation();
-            sim.Chart();
+            sim.ChartBefalling();
         });
 		newThread.start();
 	}
