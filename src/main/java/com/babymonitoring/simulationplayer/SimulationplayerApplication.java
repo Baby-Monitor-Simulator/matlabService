@@ -11,8 +11,8 @@ public class SimulationplayerApplication {
 		SpringApplication.run(SimulationplayerApplication.class, args);
 
 		Thread newThread = new Thread(() -> {
-            Simulation sim = new Simulation();
-            sim.ChartBefalling();
+            ProdSimulation sim = new ProdSimulation();
+            sim.Chart();
         });
 		newThread.start();
 	}
